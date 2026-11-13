@@ -1,0 +1,334 @@
+{
+  "name": "Onboarding de clientes con IA",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Onboarding de clientes para una agencia de marketing de restaurantes\n\nDemostración propia, con datos inventados.\n\n1. El formulario recibe los datos del cliente nuevo.\n2. Se limpian y validan (correo, campos vacíos).\n3. Se arma la lista de tareas de la primera semana según lo que necesita.\n4. Un modelo de IA redacta el correo de bienvenida.\n5. Si algo está mal, el flujo falla a propósito con un mensaje claro.\n\nFase 3: envío real del correo y tareas en un gestor.",
+        "height": 340,
+        "width": 440
+      },
+      "id": "c2f0a1b2-0001-4a00-9000-000000000001",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Alta de cliente nuevo",
+        "formDescription": "Completa estos datos para empezar a trabajar juntos.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nombre del negocio",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Nombre de contacto",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Correo",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Tipo de negocio",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Restaurante"
+                  },
+                  {
+                    "option": "Cafetería"
+                  },
+                  {
+                    "option": "Bar"
+                  },
+                  {
+                    "option": "Hotel con restaurante"
+                  },
+                  {
+                    "option": "Food truck"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Necesidad principal",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Redes sociales"
+                  },
+                  {
+                    "option": "Campañas de correo y mensajes"
+                  },
+                  {
+                    "option": "Reportes y métricas"
+                  },
+                  {
+                    "option": "Todo lo anterior"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Notas",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {
+          "formSubmittedText": "Gracias. Recibimos tus datos y en breve te contactamos."
+        }
+      },
+      "id": "c2f0a1b2-0002-4a00-9000-000000000002",
+      "name": "Formulario de alta",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -100,
+        260
+      ],
+      "webhookId": "9a1e4b73-5c20-4d86-8f1b-3e7a6c0d2b45"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst limpiar = (v) => String(v ?? '').trim();\n\nconst registro = {\n  negocio: limpiar(d['Nombre del negocio']),\n  contacto: limpiar(d['Nombre de contacto']),\n  correo: limpiar(d['Correo']).toLowerCase(),\n  tipo: limpiar(d['Tipo de negocio']),\n  necesidad: limpiar(d['Necesidad principal']),\n  notas: limpiar(d['Notas']),\n  creado: new Date().toISOString(),\n};\n\nconst errores = [];\nif (!registro.negocio) errores.push('Falta el nombre del negocio');\nif (!registro.contacto) errores.push('Falta el nombre de contacto');\nif (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(registro.correo)) errores.push('El correo no es válido');\n\nconst tareasBase = [\n  { dia: 1, tarea: 'Reunión de bienvenida' },\n  { dia: 2, tarea: 'Recoger accesos y materiales' },\n  { dia: 3, tarea: 'Definir objetivos del mes' },\n];\n\nconst porNecesidad = {\n  'Redes sociales': [\n    { dia: 4, tarea: 'Auditar los perfiles actuales' },\n    { dia: 5, tarea: 'Crear calendario de contenido (4 semanas)' },\n    { dia: 7, tarea: 'Programar las primeras 8 publicaciones' },\n  ],\n  'Campañas de correo y mensajes': [\n    { dia: 4, tarea: 'Importar y limpiar la lista de contactos' },\n    { dia: 5, tarea: 'Redactar la primera campaña' },\n    { dia: 7, tarea: 'Configurar envío y aprobación' },\n  ],\n  'Reportes y métricas': [\n    { dia: 4, tarea: 'Conectar las fuentes de datos' },\n    { dia: 5, tarea: 'Armar el tablero de métricas' },\n    { dia: 7, tarea: 'Programar el reporte semanal' },\n  ],\n};\n\nlet extra = porNecesidad[registro.necesidad];\nif (registro.necesidad === 'Todo lo anterior') {\n  extra = [\n    { dia: 4, tarea: 'Auditar perfiles, contactos y fuentes de datos' },\n    { dia: 6, tarea: 'Proponer un plan combinado de redes, correo y reportes' },\n    { dia: 7, tarea: 'Acordar prioridades con el cliente' },\n  ];\n}\nif (!extra) extra = [];\n\nreturn [{\n  json: {\n    ...registro,\n    valido: errores.length === 0,\n    errores,\n    tareas: [...tareasBase, ...extra],\n  },\n}];"
+      },
+      "id": "c2f0a1b2-0003-4a00-9000-000000000003",
+      "name": "Validar y preparar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a7c3e1f0-0004-4a00-9000-000000000020",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c2f0a1b2-0004-4a00-9000-000000000004",
+      "name": "¿Datos válidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        380,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b8d4f2a1-0005-4a00-9000-000000000021",
+              "name": "resumen",
+              "type": "string",
+              "value": "={{ 'Cliente nuevo: ' + $json.negocio + ' (' + $json.tipo + '). Contacto: ' + $json.contacto + '. Necesidad principal: ' + $json.necesidad + '. Primeras tareas: ' + $json.tareas.map(t => 'día ' + t.dia + ': ' + t.tarea).join(' | ') }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "c2f0a1b2-0005-4a00-9000-000000000005",
+      "name": "Armar resumen",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'Datos del cliente nuevo:\\n' + $json.resumen }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Eres el asistente de una agencia de marketing para restaurantes. Redacta un correo de bienvenida para un cliente nuevo, en español neutro, con tono cálido y profesional. Máximo 110 palabras. Empieza con una línea que diga Asunto: seguida del asunto, luego una línea en blanco y el cuerpo del correo. Saluda por el nombre del contacto, nombra el negocio, menciona 2 o 3 de las primeras tareas con su día y cierra invitando a responder con dudas. No supongas el género del cliente: usa frases como Te damos la bienvenida y nunca Bienvenido o Bienvenida. Firma siempre con El equipo de la agencia, sin corchetes ni huecos por rellenar. No inventes precios, fechas, nombres de personas del equipo ni promesas de resultados. No uses el guion largo."
+            }
+          ]
+        }
+      },
+      "id": "c2f0a1b2-0006-4a00-9000-000000000006",
+      "name": "Redactar correo con IA",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        900,
+        160
+      ],
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "c2f0a1b2-0007-4a00-9000-000000000007",
+      "name": "Modelo Groq",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        900,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b8d4f2a1-0008-4a00-9000-000000000022",
+              "name": "correo_bienvenida",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "b8d4f2a1-0009-4a00-9000-000000000023",
+              "name": "para",
+              "type": "string",
+              "value": "={{ $('Armar resumen').item.json.correo }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c2f0a1b2-0008-4a00-9000-000000000008",
+      "name": "Correo listo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1180,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'Datos no válidos: ' + $json.errores.join('; ') }}"
+      },
+      "id": "c2f0a1b2-0009-4a00-9000-000000000009",
+      "name": "Fallar con mensaje claro",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        640,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Formulario de alta": {
+      "main": [
+        [
+          {
+            "node": "Validar y preparar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y preparar": {
+      "main": [
+        [
+          {
+            "node": "¿Datos válidos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Datos válidos?": {
+      "main": [
+        [
+          {
+            "node": "Armar resumen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallar con mensaje claro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar resumen": {
+      "main": [
+        [
+          {
+            "node": "Redactar correo con IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo Groq": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Redactar correo con IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redactar correo con IA": {
+      "main": [
+        [
+          {
+            "node": "Correo listo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
